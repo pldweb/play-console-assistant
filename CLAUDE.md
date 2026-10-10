@@ -61,15 +61,20 @@ Findings that changed the code:
 1. **New app, from scratch to AAB upload.** This is the current linear pipeline: CREATE_APP → STORE_LISTING → APP_CONTENT → RELEASE → (REVIEW_READINESS → SUBMISSION, owner only). **Current priority.**
 2. **Partial update of an existing app.** For example, changing only the listing text. This is **not designed yet**: the engine always starts at CREATE_APP. An existing app can be linked (`linkCurrentApp`), but it is not possible to pick only some stages or fields. It needs its own mode: link → choose sections → show a diff of current and new values → apply only those sections → verify.
 
+## Who runs what
+
+- **The extension runs the automation.** The owner presses Start / Resume / Approve in the extension dashboard; the extension does the clicking and saving. Claude does not drive Play Console. Claude reads pages when a step stops, fixes selectors, runs the tests and pushes.
+- Claude in Chrome **cannot open `chrome://` or `chrome-extension://` pages**, so Claude cannot press Start in the dashboard. Idea under consideration: an in-page "Play Console Assistant" panel (Start / Resume / Approve) injected by the content script, so the owner does not have to switch to the dashboard.
+
 ## Next steps
 
 0. Done: "PCA Test 01" (`com.pldweb.pcatest01`, Indonesian – id, App, Free) exists in the account; CREATE_APP is live-verified.
 1. The owner loads the unpacked extension and creates the "PCA Test 01" record, then **links** it to the existing app (dashboard → link current app) instead of creating it again. Dummy assets come from `tests/helpers/binary.js` (`makePng`, `makeAab`). They pass the extension's validation, but **Play Console will reject the synthetic .aab**, so a real AAB built with package `com.pldweb.pcatest01` is needed for the Release stage.
 2. Run STORE_LISTING through the extension (listing-text save + reload verify). Claude Code's safety classifier blocks Claude from clicking commit buttons (Create, Save) in Play Console unless the owner gives an explicit, specific instruction in chat; the extension itself is not affected.
-4. Decide how to handle graphics ("Add assets" dialog): automate it, or keep it manual.
-5. Verify App content, Release (internal testing) and Publishing overview live, one page at a time.
-6. Then design workflow 2 (partial update mode).
-7. When the stages are verified, merge `live-selector-fixes` into `main`.
+3. Decide how to handle graphics ("Add assets" dialog): automate it, or keep it manual.
+4. Verify App content, Release (internal testing) and Publishing overview live, one page at a time.
+5. Then design workflow 2 (partial update mode).
+6. When the stages are verified, merge `live-selector-fixes` into `main`.
 
 ## Live validation tips (Claude in Chrome)
 
