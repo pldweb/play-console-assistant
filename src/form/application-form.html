@@ -1,0 +1,201 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Application form · Play Console Assistant</title>
+  <link rel="stylesheet" href="../styles/shared.css">
+  <link rel="stylesheet" href="application-form.css">
+  <script type="module" src="application-form.js"></script>
+</head>
+<body>
+  <header class="page-header">
+    <a href="../dashboard/dashboard.html">← Dashboard</a>
+    <h1 id="form-title">Application</h1>
+    <span id="state-badge" class="badge"></span>
+  </header>
+
+  <main class="layout">
+    <div id="status" aria-live="polite"></div>
+    <div id="lock-note" class="notice warn" hidden>Automation is running for this app. Pause it before editing.</div>
+    <div id="summary" aria-live="polite"></div>
+
+    <form id="app-form" novalidate>
+      <section class="card" aria-labelledby="sec-basics">
+        <h2 id="sec-basics">App basics</h2>
+        <p class="hint">Entered on the Play Console “Create app” form. The package name is not entered there; it is fixed by your first uploaded bundle and is used here to check the bundle.</p>
+        <div class="grid">
+          <div>
+            <label for="appName">App name <span class="counter" data-counter-for="metadata.appName"></span></label>
+            <input id="appName" data-path="metadata.appName" data-max="30" autocomplete="off">
+            <div class="error-text" data-error-for="metadata.appName"></div>
+          </div>
+          <div>
+            <label for="packageName">Package name</label>
+            <input id="packageName" data-path="metadata.packageName" autocomplete="off" spellcheck="false" placeholder="com.company.app">
+            <div class="error-text" data-error-for="metadata.packageName"></div>
+          </div>
+          <div>
+            <label for="defaultLanguage">Default language code</label>
+            <input id="defaultLanguage" data-path="metadata.defaultLanguage" list="lang-list" autocomplete="off">
+            <datalist id="lang-list"></datalist>
+            <div class="hint">As shown at the end of the Play Console option, e.g. en-US, id, pt-BR.</div>
+            <div class="error-text" data-error-for="metadata.defaultLanguage"></div>
+          </div>
+        </div>
+        <fieldset>
+          <legend>App or game</legend>
+          <label class="inline"><input type="radio" name="appOrGame" value="app" data-path="metadata.appOrGame"> App</label>
+          <label class="inline"><input type="radio" name="appOrGame" value="game" data-path="metadata.appOrGame"> Game</label>
+        </fieldset>
+        <fieldset>
+          <legend>Free or paid</legend>
+          <label class="inline"><input type="radio" name="pricing" value="free" data-path="metadata.pricing"> Free</label>
+          <label class="inline"><input type="radio" name="pricing" value="paid" data-path="metadata.pricing"> Paid</label>
+          <div class="warn-text" data-error-for="metadata.pricing"></div>
+        </fieldset>
+        <fieldset>
+          <legend>Creation declarations (your own confirmation, per app)</legend>
+          <p class="hint">Read the Developer Program Policies and US export law terms in Play Console. Tick only if they apply to <em>this</em> app. Unticked means “not answered”.</p>
+          <label class="inline"><input type="checkbox" data-path="appContent.declarations.policiesAccepted" data-tristate="true-or-null"> This app meets the Developer Program Policies</label>
+          <div class="error-text" data-error-for="appContent.declarations.policiesAccepted"></div>
+          <label class="inline"><input type="checkbox" data-path="appContent.declarations.exportLawsAccepted" data-tristate="true-or-null"> I accept that this app is subject to US export laws</label>
+          <div class="error-text" data-error-for="appContent.declarations.exportLawsAccepted"></div>
+        </fieldset>
+      </section>
+
+      <section class="card" aria-labelledby="sec-listing">
+        <h2 id="sec-listing">Store listing</h2>
+        <label for="title">App name on store listing <span class="counter" data-counter-for="storeListing.title"></span></label>
+        <input id="title" data-path="storeListing.title" data-max="30">
+        <div class="error-text" data-error-for="storeListing.title"></div>
+        <label for="shortDescription">Short description <span class="counter" data-counter-for="storeListing.shortDescription"></span></label>
+        <input id="shortDescription" data-path="storeListing.shortDescription" data-max="80">
+        <div class="error-text" data-error-for="storeListing.shortDescription"></div>
+        <label for="fullDescription">Full description <span class="counter" data-counter-for="storeListing.fullDescription"></span></label>
+        <textarea id="fullDescription" data-path="storeListing.fullDescription" data-max="4000" rows="8"></textarea>
+        <div class="error-text" data-error-for="storeListing.fullDescription"></div>
+        <div class="grid">
+          <div>
+            <label for="category">Category</label>
+            <select id="category" data-path="storeListing.category"></select>
+            <div class="error-text" data-error-for="storeListing.category"></div>
+          </div>
+          <div>
+            <label for="promoVideoUrl">YouTube video URL (optional)</label>
+            <input id="promoVideoUrl" data-path="storeListing.promoVideoUrl" type="url">
+            <div class="error-text" data-error-for="storeListing.promoVideoUrl"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="sec-contact">
+        <h2 id="sec-contact">Contact details and privacy</h2>
+        <div class="grid">
+          <div>
+            <label for="supportEmail">Support email</label>
+            <input id="supportEmail" data-path="storeListing.supportEmail" type="email">
+            <div class="error-text" data-error-for="storeListing.supportEmail"></div>
+          </div>
+          <div>
+            <label for="supportPhone">Phone (optional)</label>
+            <input id="supportPhone" data-path="storeListing.supportPhone" type="tel" placeholder="+62 812 3456 7890">
+            <div class="error-text" data-error-for="storeListing.supportPhone"></div>
+          </div>
+          <div>
+            <label for="supportWebsite">Website (recommended)</label>
+            <input id="supportWebsite" data-path="storeListing.supportWebsite" type="url">
+            <div class="error-text" data-error-for="storeListing.supportWebsite"></div>
+          </div>
+          <div>
+            <label for="privacyPolicyUrl">Privacy policy URL</label>
+            <input id="privacyPolicyUrl" data-path="storeListing.privacyPolicyUrl" type="url">
+            <div class="error-text" data-error-for="storeListing.privacyPolicyUrl"></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="sec-content">
+        <h2 id="sec-content">App content answers (this app only)</h2>
+        <p class="hint">The extension applies only these explicit answers. Data safety, content rating and target audience questionnaires are completed by you in Play Console; the extension only checks that they are done.</p>
+        <fieldset>
+          <legend>Does the app contain ads?</legend>
+          <label class="inline"><input type="radio" name="containsAds" value="" data-path="appContent.containsAds" data-type="nullable-bool"> Not answered</label>
+          <label class="inline"><input type="radio" name="containsAds" value="yes" data-path="appContent.containsAds" data-type="nullable-bool"> Yes</label>
+          <label class="inline"><input type="radio" name="containsAds" value="no" data-path="appContent.containsAds" data-type="nullable-bool"> No</label>
+          <div class="error-text" data-error-for="appContent.containsAds"></div>
+        </fieldset>
+        <fieldset>
+          <legend>App access</legend>
+          <label class="inline"><input type="radio" name="appAccess" value="" data-path="appContent.appAccess" data-type="nullable"> Not answered</label>
+          <label class="inline"><input type="radio" name="appAccess" value="all_available" data-path="appContent.appAccess" data-type="nullable"> All functionality is available without special access</label>
+          <label class="inline"><input type="radio" name="appAccess" value="restricted" data-path="appContent.appAccess" data-type="nullable"> Some functionality is restricted (you enter instructions in Play Console)</label>
+          <div class="error-text" data-error-for="appContent.appAccess"></div>
+        </fieldset>
+        <div class="grid">
+          <div>
+            <label for="crs">Content rating (your tracking)</label>
+            <select id="crs" data-path="appContent.contentRatingStatus"><option value="not_started">Not done</option><option value="completed_by_user">I completed it in Play Console</option></select>
+          </div>
+          <div>
+            <label for="tas">Target audience (your tracking)</label>
+            <select id="tas" data-path="appContent.targetAudienceStatus"><option value="not_started">Not done</option><option value="completed_by_user">I completed it in Play Console</option></select>
+          </div>
+          <div>
+            <label for="dss">Data safety (your tracking)</label>
+            <select id="dss" data-path="appContent.dataSafetyStatus"><option value="not_started">Not done</option><option value="completed_by_user">I completed it in Play Console</option></select>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" aria-labelledby="sec-release">
+        <h2 id="sec-release">Release</h2>
+        <div class="grid">
+          <div>
+            <label for="releaseTrack">Track</label>
+            <select id="releaseTrack" data-path="release.releaseTrack">
+              <option value="internal">Internal testing</option>
+              <option value="closed">Closed testing</option>
+              <option value="open">Open testing</option>
+              <option value="production">Production</option>
+            </select>
+            <div class="warn-text" data-error-for="release.releaseTrack"></div>
+            <p class="hint">The current automation supports the internal testing track page. Other tracks are UNVERIFIED.</p>
+          </div>
+          <div>
+            <label for="releaseName">Release name (optional)</label>
+            <input id="releaseName" data-path="release.releaseName">
+          </div>
+          <div>
+            <label for="versionCode">Version code</label>
+            <input id="versionCode" data-path="release.versionCode" data-type="int" inputmode="numeric">
+            <div class="hint">Filled from the bundle when it can be read.</div>
+            <div class="error-text" data-error-for="release.versionCode"></div>
+          </div>
+          <div>
+            <label for="versionName">Version name (optional)</label>
+            <input id="versionName" data-path="release.versionName">
+          </div>
+        </div>
+        <label for="releaseNotes">Release notes (default language) <span class="counter" data-counter-for="release.releaseNotes"></span></label>
+        <textarea id="releaseNotes" data-path="release.releaseNotes" data-max="500" rows="4"></textarea>
+        <div class="error-text" data-error-for="release.releaseNotes"></div>
+        <div class="error-text" data-error-for="release.aabFile"></div>
+      </section>
+
+      <div class="row form-actions">
+        <button type="submit" class="primary">Save</button>
+        <button type="button" id="validate-btn">Check readiness</button>
+        <span class="spacer"></span>
+        <a href="../dashboard/dashboard.html">Cancel</a>
+      </div>
+    </form>
+
+    <section class="card" aria-labelledby="sec-assets" id="assets-section">
+      <h2 id="sec-assets">Assets</h2>
+      <p class="hint">Select this app's folder. Files are matched by your filename conventions, checked by reading their contents, and copied into extension storage only when you press “Save assets”. Nothing is uploaded until automation runs.</p>
+      <div id="asset-mapper"></div>
+    </section>
+  </main>
+</body>
+</html>

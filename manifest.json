@@ -1,0 +1,49 @@
+{
+  "manifest_version": 3,
+  "name": "Play Console Assistant",
+  "version": "0.1.0",
+  "description": "Fills prepared app data into Google Play Console, step by step, with verification and explicit confirmation before submission.",
+  "minimum_chrome_version": "116",
+  "permissions": ["storage", "unlimitedStorage"],
+  "host_permissions": ["https://play.google.com/console/*"],
+  "background": {
+    "service_worker": "src/background/service-worker.js",
+    "type": "module"
+  },
+  "action": {
+    "default_title": "Play Console Assistant",
+    "default_popup": "src/popup/popup.html",
+    "default_icon": {
+      "16": "icons/icon-16.png",
+      "32": "icons/icon-32.png"
+    }
+  },
+  "icons": {
+    "16": "icons/icon-16.png",
+    "32": "icons/icon-32.png",
+    "48": "icons/icon-48.png",
+    "128": "icons/icon-128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": ["https://play.google.com/console/*"],
+      "js": ["src/content/content-script.js"],
+      "run_at": "document_idle",
+      "all_frames": false
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "resources": [
+        "src/content/*",
+        "src/adapters/*",
+        "src/services/errors.js",
+        "src/services/messaging.js"
+      ],
+      "matches": ["https://play.google.com/*"]
+    }
+  ],
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'"
+  }
+}

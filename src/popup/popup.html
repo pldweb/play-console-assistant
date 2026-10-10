@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Play Console Assistant</title>
+  <link rel="stylesheet" href="../styles/shared.css">
+  <link rel="stylesheet" href="popup.css">
+  <script type="module" src="popup.js"></script>
+</head>
+<body>
+  <header class="row">
+    <h1>Play Console Assistant</h1>
+  </header>
+  <section aria-labelledby="page-h">
+    <h2 id="page-h" class="sr-only">Current tab</h2>
+    <dl class="kv">
+      <dt>Page</dt><dd id="page">checking…</dd>
+      <dt>App</dt><dd id="app">—</dd>
+      <dt>Stage</dt><dd id="stage">—</dd>
+    </dl>
+  </section>
+  <div id="message" aria-live="polite"></div>
+  <div class="row" id="controls"></div>
+  <div class="row" style="margin-top:.6rem">
+    <button type="button" id="open-dashboard" class="primary">Open dashboard</button>
+  </div>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Dashboard · Play Console Assistant</title>
+  <link rel="stylesheet" href="../styles/shared.css">
+  <link rel="stylesheet" href="dashboard.css">
+  <script type="module" src="dashboard.js"></script>
+</head>
+<body>
+  <header class="page-header">
+    <h1>Play Console Assistant</h1>
+    <span class="spacer"></span>
+    <a class="button primary" href="../form/application-form.html">Add application</a>
+    <button type="button" id="import-btn">Import…</button>
+    <button type="button" id="export-btn">Export backup</button>
+    <button type="button" id="settings-btn" aria-expanded="false" aria-controls="settings-panel">Settings</button>
+    <input type="file" id="import-input" accept="application/json,.json" hidden>
+  </header>
+
+  <main class="layout">
+    <div id="status" aria-live="polite"></div>
+
+    <section id="settings-panel" class="card" hidden aria-labelledby="settings-title">
+      <h2 id="settings-title">Settings</h2>
+      <form id="settings-form">
+        <label class="inline"><input type="checkbox" name="requirePlanApproval"> Ask me to approve each step's planned changes before anything is written (recommended until selectors are verified)</label>
+        <div class="grid">
+          <div><label for="s-retry">Retry limit (safe actions only)</label><input id="s-retry" name="retryLimit" type="number" min="0" max="5"></div>
+          <div><label for="s-step">Step timeout (ms)</label><input id="s-step" name="stepTimeoutMs" type="number" min="5000" step="1000"></div>
+          <div><label for="s-nav">Page load timeout (ms)</label><input id="s-nav" name="navigationTimeoutMs" type="number" min="5000" step="1000"></div>
+          <div><label for="s-proc">Bundle processing timeout (ms)</label><input id="s-proc" name="bundleProcessingTimeoutMs" type="number" min="60000" step="10000"></div>
+          <div><label for="s-user">Google account index (/console/u/N/)</label><input id="s-user" name="consoleUserIndex" type="number" min="0" max="9"></div>
+        </div>
+        <fieldset>
+          <legend>Filename conventions (regular expressions, case-insensitive)</legend>
+          <div id="conventions" class="grid"></div>
+        </fieldset>
+        <div class="row"><button type="submit" class="primary">Save settings</button><button type="button" id="settings-reset">Restore defaults</button></div>
+      </form>
+    </section>
+
+    <section class="card" aria-labelledby="tab-title">
+      <div class="row">
+        <h2 id="tab-title" style="margin:0">Automation tab</h2>
+        <span class="spacer"></span>
+        <button type="button" id="tabs-refresh">Refresh</button>
+        <button type="button" id="open-console">Open Play Console</button>
+      </div>
+      <div class="row">
+        <label for="tab-select" class="sr-only">Play Console tab used for automation</label>
+        <select id="tab-select" style="max-width:640px"></select>
+      </div>
+      <div id="tab-info" class="small muted" aria-live="polite"></div>
+    </section>
+
+    <section class="card" aria-labelledby="summary-title">
+      <h2 id="summary-title">Progress</h2>
+      <div id="summary" class="summary"></div>
+    </section>
+
+    <div class="columns">
+      <section class="card" aria-labelledby="list-title">
+        <h2 id="list-title">Applications</h2>
+        <div class="row toolbar">
+          <label for="search" class="sr-only">Search by name or package</label>
+          <input id="search" type="search" placeholder="Search name or package…">
+          <label for="filter" class="sr-only">Filter by status</label>
+          <select id="filter"></select>
+        </div>
+        <div class="table-wrap"><table>
+          <thead><tr><th>App</th><th>Status</th><th>Updated</th><th><span class="sr-only">Actions</span></th></tr></thead>
+          <tbody id="app-rows"></tbody>
+        </table></div>
+        <p id="empty" class="muted" hidden>No applications yet. Use “Add application”.</p>
+      </section>
+
+      <section class="card detail" aria-labelledby="detail-title" id="detail">
+        <h2 id="detail-title">Select an application</h2>
+        <div id="detail-body" class="muted">Choose an app from the list to see its progress and controls.</div>
+      </section>
+    </div>
+  </main>
+</body>
+</html>

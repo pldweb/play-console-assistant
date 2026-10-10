@@ -1,0 +1,93 @@
+:root {
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --text: #1c2430;
+  --muted: #5b6573;
+  --border: #d7dce3;
+  --accent: #0f6e78;
+  --accent-text: #ffffff;
+  --danger: #b3261e;
+  --warn: #8a5a00;
+  --ok: #1d6b35;
+  --focus: #1a73e8;
+  --radius: 8px;
+  color-scheme: light;
+  font: 14px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #14181d;
+    --surface: #1d232a;
+    --text: #e6e9ee;
+    --muted: #a4adb9;
+    --border: #36404b;
+    --accent: #4fb3bd;
+    --accent-text: #0b1214;
+    --danger: #ff8a80;
+    --warn: #ffcc66;
+    --ok: #7bd88f;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); }
+h1, h2, h3 { line-height: 1.25; margin: 0 0 .5rem; }
+h1 { font-size: 1.35rem; }
+h2 { font-size: 1.1rem; }
+h3 { font-size: 1rem; }
+a { color: var(--accent); }
+p { margin: .25rem 0 .5rem; }
+
+button, .button {
+  font: inherit; border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  padding: .4rem .8rem; border-radius: var(--radius); cursor: pointer; min-height: 32px;
+}
+button.primary { background: var(--accent); color: var(--accent-text); border-color: var(--accent); }
+button.danger { color: var(--danger); border-color: var(--danger); }
+button:disabled { opacity: .5; cursor: not-allowed; }
+button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible, a:focus-visible {
+  outline: 2px solid var(--focus); outline-offset: 2px;
+}
+input, select, textarea {
+  font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border);
+  border-radius: 6px; padding: .4rem .5rem; width: 100%;
+}
+textarea { min-height: 5rem; resize: vertical; }
+input[type=checkbox], input[type=radio] { width: auto; }
+label { display: block; font-weight: 600; margin: .6rem 0 .2rem; }
+label.inline { display: inline-flex; gap: .35rem; align-items: center; font-weight: 400; margin: .2rem 1rem .2rem 0; }
+fieldset { border: 1px solid var(--border); border-radius: var(--radius); padding: .5rem .8rem .8rem; margin: .6rem 0; }
+legend { font-weight: 600; padding: 0 .3rem; }
+
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; }
+.muted { color: var(--muted); }
+.small { font-size: .85rem; }
+.row { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+.spacer { flex: 1; }
+.hint { color: var(--muted); font-size: .85rem; margin-top: .15rem; }
+.error-text { color: var(--danger); font-size: .85rem; margin-top: .15rem; }
+.warn-text { color: var(--warn); font-size: .85rem; }
+.ok-text { color: var(--ok); }
+.counter { float: right; font-weight: 400; color: var(--muted); font-size: .8rem; }
+.counter.over { color: var(--danger); font-weight: 600; }
+
+.badge { display: inline-block; padding: .05rem .5rem; border-radius: 999px; font-size: .78rem; border: 1px solid var(--border); white-space: nowrap; }
+.badge.ok { color: var(--ok); border-color: var(--ok); }
+.badge.warn { color: var(--warn); border-color: var(--warn); }
+.badge.danger { color: var(--danger); border-color: var(--danger); }
+.badge.accent { color: var(--accent); border-color: var(--accent); }
+
+.notice { border-left: 4px solid var(--accent); background: var(--surface); padding: .6rem .8rem; border-radius: 4px; margin: .5rem 0; }
+.notice.warn { border-color: var(--warn); }
+.notice.danger { border-color: var(--danger); }
+.notice.ok { border-color: var(--ok); }
+
+table { border-collapse: collapse; width: 100%; }
+th, td { text-align: left; padding: .4rem .5rem; border-bottom: 1px solid var(--border); vertical-align: top; }
+th { font-size: .8rem; color: var(--muted); font-weight: 600; }
+.table-wrap { overflow-x: auto; }
+
+dialog { border: 1px solid var(--border); border-radius: var(--radius); background: var(--surface); color: var(--text); max-width: min(560px, 92vw); }
+dialog::backdrop { background: rgba(0, 0, 0, .35); }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+pre.log { white-space: pre-wrap; font-size: .8rem; max-height: 300px; overflow: auto; margin: 0; }

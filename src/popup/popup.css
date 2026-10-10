@@ -1,0 +1,6 @@
+body { width: 340px; padding: .8rem; }
+h1 { font-size: 1rem; margin: 0 0 .5rem; }
+.kv { display: grid; grid-template-columns: max-content 1fr; gap: .2rem .6rem; margin: 0 0 .5rem; }
+.kv dt { color: var(--muted); }
+.kv dd { margin: 0; word-break: break-word; }
+#controls button { flex: 1; }
