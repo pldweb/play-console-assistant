@@ -41,15 +41,18 @@ Labels were checked with Claude in Chrome (read only). The details are in the "L
 
 | Area | Status |
 |---|---|
-| All apps, Create app form, Default store listing (text fields) | Labels read live; code fixed on branch `live-selector-fixes` |
-| Create app final click, saving the store listing, everything after | **Not run live yet** |
+| CREATE_APP stage (precheck → fill-form → submit-create) | **Ran live end to end on 2026-10-10** with the adapter code injected into the tab: created "PCA Test 01"; every inspect/apply/verify passed, including the language dropdown and "Check availability" |
+| Default store listing (text fields) | Labels read live on the new app; save + reload **not run yet** |
+| Saving the store listing, everything after | **Not run live yet** |
 | Store settings, App content, Release, Publishing overview | **Unverified** (only the nav-link paths were seen) |
 
 Findings that changed the code:
 - App list: the level-1 heading is the **developer account name**; detection uses the level-2 heading `N apps`. "Create app" is a **link** (`a[role=link]`). Apps are in a `role=grid`, and the first `gridcell` holds the name with the package name below it.
 - Create app: there is a required **"App package name"** field and a **"Check availability"** button, whose result appears in an `aria-live=polite` region ("Package name available"). The language control is a `div[role=button][aria-haspopup=listbox]` named "Default language: …". Its `[role=option]` items render in an **overlay**, not inside the `aria-controls` popup. Native value setter + input/change events are accepted by the form.
 - Store listing: the URL is `app/{app}/store-listings/default/edit` (heading "Default store listing"). `main-store-listing` redirects to the app list. Fields are `role=group` with their own `<label>`. Graphics use an **"Add assets" dialog with no file input**; this is not automated yet and stops with `MANUAL_SECTION_INCOMPLETE`. Saving is done with **"Save as draft"** (next to "Discard" and "Next").
-- A **new app has no default listing**. `app/{app}/store-listings` shows a **"Create default store listing"** button. This is not handled yet; observe it on PCA Test 01 before coding it.
+- A **new app has no default listing**: `app/{app}/store-listings` shows a "Create default store listing" button. Opening `app/{app}/store-listings/default/edit` **directly** works anyway (form opens, App name prefilled from the Create app form), which is what the engine does, so no extra step is needed.
+- The Create app button is **enabled even while the declarations are unticked**. Never rely on it being disabled; `submit-create` re-verifies every field (including both declarations) first.
+- After a full page load, app pages enforce **Trusted Types** (string `eval` is blocked). The extension is unaffected (it loads modules with `import()` from its own files), but a test harness that evals a bundle only works on pages reached by in-app (SPA) navigation from a page that did not enforce it.
 - Closed testing lives at `app/{app}/closed-testing`; the other tracks are under `tracks/`.
 - `/console/u/0/developers` without an ID is a developer-account chooser page.
 
@@ -60,9 +63,9 @@ Findings that changed the code:
 
 ## Next steps
 
-1. The owner loads the unpacked extension and creates the "PCA Test 01" record. Dummy assets come from `tests/helpers/binary.js` (`makePng`, `makeAab`). They pass the extension's validation, but **Play Console will reject the synthetic .aab**, so a real AAB built with package `com.pldweb.pcatest01` is needed for the Release stage.
-2. Run stage CREATE_APP live with approval on. Stop before the declarations are ticked and before the final "Create app".
-3. On the new app, observe the "Create default store listing" flow and add a step/page type for it. Then verify listing-text save + reload.
+0. Done: "PCA Test 01" (`com.pldweb.pcatest01`, Indonesian – id, App, Free) exists in the account; CREATE_APP is live-verified.
+1. The owner loads the unpacked extension and creates the "PCA Test 01" record, then **links** it to the existing app (dashboard → link current app) instead of creating it again. Dummy assets come from `tests/helpers/binary.js` (`makePng`, `makeAab`). They pass the extension's validation, but **Play Console will reject the synthetic .aab**, so a real AAB built with package `com.pldweb.pcatest01` is needed for the Release stage.
+2. Run STORE_LISTING through the extension (listing-text save + reload verify). Claude Code's safety classifier blocks Claude from clicking commit buttons (Create, Save) in Play Console unless the owner gives an explicit, specific instruction in chat; the extension itself is not affected.
 4. Decide how to handle graphics ("Add assets" dialog): automate it, or keep it manual.
 5. Verify App content, Release (internal testing) and Publishing overview live, one page at a time.
 6. Then design workflow 2 (partial update mode).

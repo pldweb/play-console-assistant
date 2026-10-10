@@ -43,18 +43,18 @@ App identity:
 
 | Purpose | Locator | Kind | Verification | Status |
 |---|---|---|---|---|
-| Open the form (app list) | **link** `a[role=link]` `/^Create app$/i` (`getButton(…, { links: true })`) | link | navigates to CREATE_APP page | Mock ✔ · Live ✔ (read) |
-| Existing apps (duplicate check) | `[role=grid] [role=row]` (header rows skipped) → first `gridcell` → first visible leaf text (the name; the package name is the next leaf) | read | exact / prefix name match | Mock ✔ · Live ✔ (read) |
-| App name | `aria-label="App name"` | text | value read back | Mock ✔ · Live ✔ (read) |
-| Package name | `aria-label="App package name"` (visible label "Package name", max 150) | text | value read back | Mock ✔ · Live ✔ (native setter accepted) |
-| Package availability | button `/^Check availability$/i` → `aria-live=polite` region text `Package name available` (any other text → `PACKAGE_UNAVAILABLE`) | button + read | status text | Mock ✔ · Live ✔ (available case only) |
-| Default language | `div[role=button][aria-haspopup=listbox]`, accessible name `Default language: <value>` → label `/^Default language(:\|$)/i`; options are `[role=option]` (`material-select-dropdown-item`) in an overlay listbox, **not** inside the `aria-controls` popup; option text `Indonesian – id` (`languageOptionMatcher`) | dropdown | shown text without the `arrow_drop_down` icon | Mock ✔ · Live ✔ (read; selection not yet run) |
-| App or game | radio `App` / `Game` (`label for`), group `aria-label="Choose the category of your application"` | radio | `checked` | Mock ✔ · Live ✔ (read) |
-| Free or paid | radio `Free` / `Paid`, group `aria-label="Choose if your application is free or paid"` | radio | `checked` | Mock ✔ · Live ✔ (read) |
-| Policies declaration | checkbox, `aria-labelledby` text starting "Confirm app meets the Developer Program Policies" → `/Developer Program Policies/i` | checkbox | `checked`; ticked only if the record says `true` | Mock ✔ · Live ✔ (read) |
-| Export laws declaration | checkbox, `aria-labelledby` text starting "Accept US export laws" → `/US export laws/i` | checkbox | as above | Mock ✔ · Live ✔ (read) |
+| Open the form (app list) | **link** `a[role=link]` `/^Create app$/i` (`getButton(…, { links: true })`) | link | navigates to CREATE_APP page | Mock ✔ · Live ✔ (run 2026-10-10) |
+| Existing apps (duplicate check) | `[role=grid] [role=row]` (header rows skipped) → first `gridcell` → first visible leaf text (the name; the package name is the next leaf) | read | exact / prefix name match | Mock ✔ · Live ✔ (run 2026-10-10) |
+| App name | `aria-label="App name"` | text | value read back | Mock ✔ · Live ✔ (run 2026-10-10) |
+| Package name | `aria-label="App package name"` (visible label "Package name", max 150) | text | value read back | Mock ✔ · Live ✔ (run 2026-10-10) |
+| Package availability | button `/^Check availability$/i` → `aria-live=polite` region text `Package name available` (any other text → `PACKAGE_UNAVAILABLE`) | button + read | status text | Mock ✔ · Live ✔ (run; available case only) |
+| Default language | `div[role=button][aria-haspopup=listbox]`, accessible name `Default language: <value>` → label `/^Default language(:\|$)/i`; options are `[role=option]` (`material-select-dropdown-item`) in an overlay listbox, **not** inside the `aria-controls` popup; option text `Indonesian – id` (`languageOptionMatcher`) | dropdown | shown text without the `arrow_drop_down` icon | Mock ✔ · Live ✔ (run: selected Indonesian – id) |
+| App or game | radio `App` / `Game` (`label for`), group `aria-label="Choose the category of your application"` | radio | `checked` | Mock ✔ · Live ✔ (run 2026-10-10) |
+| Free or paid | radio `Free` / `Paid`, group `aria-label="Choose if your application is free or paid"` | radio | `checked` | Mock ✔ · Live ✔ (run 2026-10-10) |
+| Policies declaration | checkbox, `aria-labelledby` text starting "Confirm app meets the Developer Program Policies" → `/Developer Program Policies/i` | checkbox | `checked`; ticked only if the record says `true` | Mock ✔ · Live ✔ (run 2026-10-10) |
+| Export laws declaration | checkbox, `aria-labelledby` text starting "Accept US export laws" → `/US export laws/i` | checkbox | as above | Mock ✔ · Live ✔ (run 2026-10-10) |
 | Unknown questions | any other checkbox or radio group on the page | — | stops with `UNKNOWN_QUESTION` | Mock ✔ |
-| Submit | button `/^Create app$/i` (disabled until the form is complete; a **Cancel** button sits next to it) | button | engine waits for APP_DASHBOARD with the new app ID and the exact app name | Mock ✔ · Live ✖ |
+| Submit | button `/^Create app$/i` (enabled even before the declarations are ticked; a **Cancel** button sits next to it) | button | engine waits for APP_DASHBOARD with the new app ID and the exact app name | Mock ✔ · Live ✔ (created PCA Test 01; full page load to `app/{app}/app-dashboard`, title `Dashboard \| <app name>`) |
 
 ## Store listing — `store-listing-adapter.js`
 
