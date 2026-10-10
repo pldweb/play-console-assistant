@@ -4,7 +4,7 @@ A Chrome extension (Manifest V3) that fills **prepared** app data into Google Pl
 
 It does **not** build bundles, design graphics, write copy, answer policy questionnaires, or get around sign-in, 2-Step Verification, CAPTCHA or Google's testing requirements.
 
-> **Status: read this first.** Every Play Console selector, URL and page heading the extension uses is **UNVERIFIED** against the live console. No Play Console account was available while it was built, so automation has only been tested against a simulated Play Console. Before using it on real apps, follow the validation checklist in [docs/TEST_PLAN.md](docs/TEST_PLAN.md#manual-live-validation-checklist) with **one** test app. Keep "approve each step" switched on (it is on by default) until that is done. See [docs/PLATFORM_AUDIT.md](docs/PLATFORM_AUDIT.md) for what is and isn't known.
+> **Status: read this first.** Selectors for All apps, the Create app form and the default store listing text were read on the live Play Console on 2026-10-10 (branch `live-selector-fixes`), but no stage has completed a full live run yet, and the other pages are still **UNVERIFIED**. Graphics are added in Play Console through an "Add assets" dialog that the extension does not automate yet. Follow the validation checklist in [docs/TEST_PLAN.md](docs/TEST_PLAN.md#manual-live-validation-checklist) with **one** test app and keep "approve each step" switched on (it is on by default). See [docs/SELECTOR_MAP.md](docs/SELECTOR_MAP.md) and [docs/PLATFORM_AUDIT.md](docs/PLATFORM_AUDIT.md) for what is and isn't known; [CLAUDE.md](CLAUDE.md) has the working notes for continuing development.
 
 ## Requirements
 
@@ -24,7 +24,7 @@ The extension asks only for `storage`, `unlimitedStorage` and access to `https:/
 
 1. In the dashboard, click **Add application**.
 2. Fill in the form:
-   - **App basics:** the app name exactly as it should appear in Play Console, the package name, the default language code (e.g. `en-US`), app or game, and free or paid.
+   - **App basics:** the app name exactly as it should appear in Play Console, the package name (Play Console now asks for it when the app is created and checks that it is available), the default language code (e.g. `en-US`), app or game, and free or paid.
    - **Creation declarations:** tick these only if they are true for *this* app. Left unticked, they count as "not answered", and automation will not start.
    - **Store listing, contact details, privacy policy URL.**
    - **App content answers:** whether the app contains ads, and app access. "Not answered" is a valid saved state, but it blocks automation.
