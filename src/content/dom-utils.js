@@ -21,7 +21,8 @@ export const docOf = (node) => node.ownerDocument || node;
 export const normalize = (s) => String(s ?? '').replace(/\s+/g, ' ').trim();
 
 const TEXTBOX = 'input:not([type]),input[type=text],input[type=email],input[type=url],input[type=tel],input[type=number],input[type=search],textarea,[role=textbox],[contenteditable=true]';
-const COMBOBOX = 'select,[role=combobox]';
+// Play Console renders its dropdowns as role=button with aria-haspopup=listbox.
+const COMBOBOX = 'select,[role=combobox],[role=button][aria-haspopup=listbox]';
 const CHECKBOX = 'input[type=checkbox],[role=checkbox]';
 const RADIO = 'input[type=radio],[role=radio]';
 const FILE = 'input[type=file]';
@@ -44,6 +45,13 @@ export function isVisible(el) {
 
 function textOf(el) {
   return normalize(el ? el.textContent : '');
+}
+
+/** Text without aria-hidden descendants (drops icon ligatures such as "arrow_drop_down"). */
+function shownText(el) {
+  const clone = el.cloneNode(true);
+  for (const h of clone.querySelectorAll('[aria-hidden=true]')) h.remove();
+  return normalize(clone.textContent);
 }
 
 /** Simplified accessible-name computation (aria-labelledby > aria-label > label > title > content > placeholder). */
@@ -101,12 +109,14 @@ export function getByLabel(root, label, kind = 'text') {
   return found[0];
 }
 
-export function queryButtons(root, text) {
-  return [...root.querySelectorAll(BUTTON)].filter((el) => isVisible(el) && matchesLabel(accessibleName(el), text));
+/** `links: true` also accepts links styled as buttons (e.g. "Create app" on the app list). */
+export function queryButtons(root, text, { links = false } = {}) {
+  const sel = links ? `${BUTTON},a[href],[role=link]` : BUTTON;
+  return [...root.querySelectorAll(sel)].filter((el) => isVisible(el) && matchesLabel(accessibleName(el), text));
 }
 
-export function getButton(root, text) {
-  const found = queryButtons(root, text);
+export function getButton(root, text, options) {
+  const found = queryButtons(root, text, options);
   if (found.length === 0) throw new PCAError(ERROR_CODES.ELEMENT_NOT_FOUND, `No button ${describe(text)} was found.`, { label: String(text), kind: 'button' });
   if (found.length > 1) throw new PCAError(ERROR_CODES.AMBIGUOUS_ELEMENT, `${found.length} buttons match ${describe(text)}; refusing to guess.`, { label: String(text), kind: 'button', count: found.length });
   return found[0];
@@ -124,7 +134,10 @@ export function getSection(root, title) {
     const name = el.getAttribute('aria-label') || el.getAttribute('aria-labelledby') ? accessibleName(el) : legend ? textOf(legend) : '';
     if (name && matchesLabel(name, title)) { candidates.add(el); continue; }
     const heading = el.querySelector(':scope > h1, :scope > h2, :scope > h3, :scope > h4, :scope > header h2, :scope > header h3, :scope > [role=heading]');
-    if (heading && matchesLabel(textOf(heading), title)) candidates.add(el);
+    if (heading && matchesLabel(textOf(heading), title)) { candidates.add(el); continue; }
+    // Play Console form fields: role=group whose own first <label> names it.
+    const own = el.matches('[role=group]') ? [...el.querySelectorAll('label')].find((l) => l.closest('[role=group]') === el) : null;
+    if (own && matchesLabel(textOf(own), title)) candidates.add(el);
   }
   // Prefer the innermost containers when nested sections both match.
   const list = [...candidates].filter((c) => ![...candidates].some((o) => o !== c && c.contains(o)));
@@ -134,7 +147,7 @@ export function getSection(root, title) {
 }
 
 export function getHeadingTexts(root) {
-  return [...root.querySelectorAll('h1,h2,[role=heading][aria-level="1"]')].filter(isVisible).map(textOf);
+  return [...root.querySelectorAll('h1,h2,[role=heading][aria-level="1"],[role=heading][aria-level="2"]')].filter(isVisible).map(textOf);
 }
 
 export const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -176,7 +189,7 @@ function fire(el, type, init = {}) {
 export function getFieldValue(el) {
   if (el.matches('[contenteditable=true],[role=textbox]:not(input):not(textarea)')) return el.textContent;
   if (el.matches('select')) return el.selectedOptions[0] ? normalize(el.selectedOptions[0].textContent) : '';
-  if (el.matches('[role=combobox]:not(input)')) return textOf(el);
+  if (el.matches('[role=combobox]:not(input),[role=button][aria-haspopup=listbox]')) return shownText(el);
   return el.value;
 }
 
@@ -228,9 +241,15 @@ export async function selectOption(el, wanted, { timeout = 5000 } = {}) {
   // ARIA combobox: open, wait for options, click the single match.
   if (el.getAttribute('aria-expanded') !== 'true') el.click();
   const controls = el.getAttribute('aria-controls') || el.getAttribute('aria-owns');
-  const scope = () => (controls && doc.getElementById(controls)) || doc;
+  // Play Console renders the options in an overlay outside the aria-controls
+  // popup; fall back to open listboxes anywhere in the document.
+  const candidates = () => {
+    const own = controls && doc.getElementById(controls);
+    const inOwn = own ? [...own.querySelectorAll('[role=option]')] : [];
+    return inOwn.length ? inOwn : [...doc.querySelectorAll('[role=listbox] [role=option]')];
+  };
   const option = await waitFor(() => {
-    const opts = [...scope().querySelectorAll('[role=option]')].filter((o) => isVisible(o) && optionMatches(o.textContent, wanted));
+    const opts = candidates().filter((o) => isVisible(o) && optionMatches(o.textContent, wanted));
     if (opts.length > 1) throw new PCAError(ERROR_CODES.AMBIGUOUS_ELEMENT, `Several options match ${describe(wanted)}.`);
     return opts[0];
   }, { timeout, description: `option ${describe(wanted)}`, rethrow: true });

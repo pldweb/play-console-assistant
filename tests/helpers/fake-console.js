@@ -2,10 +2,13 @@
  * Simulated Google Play Console for workflow tests.
  *
  * SYNTHETIC: page markup follows the labels documented in
- * docs/SELECTOR_MAP.md (all UNVERIFIED). It is NOT captured from the live
- * Play Console; it exists to exercise the engine and adapters end to end:
- * navigation, rendering delays, saving + reload, uploads, dialogs and
- * injected faults.
+ * docs/SELECTOR_MAP.md. The app list, Create app form and default store
+ * listing mirror the structure seen on the live console on 2026-10-10
+ * (role=grid app list, "Create app" link, package name + "Check
+ * availability", role=button language dropdown with an overlay listbox,
+ * role=group form fields). It is still not a capture; it exists to exercise
+ * the engine and adapters end to end: navigation, rendering delays,
+ * saving + reload, uploads, dialogs and injected faults.
  */
 import { JSDOM } from 'jsdom';
 import { createContentHandler } from '../../src/content/message-handler.js';
@@ -154,7 +157,7 @@ export class FakeConsole {
     const [, appId, sub] = am;
     if (!this.apps.has(appId)) return { page: 'unknown' };
     const map = {
-      'app-dashboard': 'dashboard', 'main-store-listing': 'listing', 'store-settings': 'settings',
+      'app-dashboard': 'dashboard', 'store-listings/default/edit': 'listing', 'store-settings': 'settings',
       'app-content/overview': 'content', 'app-content/privacy-policy': 'privacy', 'app-content/ads-declaration': 'ads',
       'app-content/testing-credentials': 'access', 'tracks/internal-testing': 'track', publishing: 'publishing',
     };
@@ -174,32 +177,34 @@ export class FakeConsole {
     const app = r.appId ? this.apps.get(r.appId) : null;
     switch (r.page) {
       case 'list': {
-        const rows = [...this.apps.values()].map((a) => `<div role="row"><div role="rowheader">${esc(a.name)}</div><div role="cell">${esc(a.packageName || '—')}</div></div>`).join('');
-        return this.shell(null, `<h1>All apps</h1><button type="button">Create app</button>
-          <div role="table" aria-label="Apps"><div role="row"><div role="columnheader">App</div><div role="columnheader">Package</div></div>${rows}</div>`);
+        const rows = [...this.apps.values()].map((a) => `<div role="row"><div role="gridcell"><img aria-hidden="true" src="data:,"><div><div>${esc(a.name)}</div></div><div><div>${esc(a.packageName || '')}</div></div></div><div role="gridcell">Draft</div></div>`).join('');
+        return this.shell(null, `<div role="heading" aria-level="1">Rinkweb Studio</div><div role="heading" aria-level="2">${this.apps.size} apps</div>
+          <a role="link" href="/console/u/0/developers/${this.developerId}/create-new-app">Create app</a>
+          <div role="grid"><div role="row"><div role="columnheader">App</div><div role="columnheader">App status</div></div>${rows}</div>`);
       }
       case 'create': {
         const extra = this.faults.unknownCreateQuestion
           ? '<div><input type="checkbox" id="d3"><label for="d3">I agree to the new Play App Signing terms of service</label></div>' : '';
-        const opts = LANGS.map(([n, c]) => `<li role="option" aria-selected="${c === 'en-US'}">${n} – ${c}</li>`).join('');
-        return this.shell(null, `<h1>Create app</h1>
-          <form aria-label="Create app">
-            <section aria-labelledby="h-det"><h2 id="h-det">App details</h2>
-              <div><label for="f-name">App name</label><input id="f-name" maxlength="30"><span>0/30</span></div>
-              <div><span id="lang-l">Default language</span>
-                <div role="combobox" tabindex="0" aria-labelledby="lang-l" aria-expanded="false" aria-controls="lang-list">English (United States) – en-US</div>
-                <ul role="listbox" id="lang-list" hidden>${opts}</ul></div>
-              <fieldset><legend>App or game</legend><label><input type="radio" name="kind">App</label><label><input type="radio" name="kind">Game</label></fieldset>
-              <fieldset><legend>Free or paid</legend><label><input type="radio" name="price">Free</label><label><input type="radio" name="price">Paid</label></fieldset>
-            </section>
-            <section aria-labelledby="h-dec"><h2 id="h-dec">Declarations</h2>
-              <div><input type="checkbox" id="d1"><label for="d1">Developer Program Policies: Confirm that this app meets the Developer Program Policies</label></div>
-              <div><input type="checkbox" id="d2"><label for="d2">US export laws: Accept that your app is subject to US export laws</label></div>
-              ${extra}
-            </section>
-            <div id="create-errors"></div>
-            <button type="button">Create app</button>
-          </form>`);
+        const opts = LANGS.map(([n, c]) => `<div role="option" aria-selected="${c === 'en-US'}">${n} – ${c}</div>`).join('');
+        // Live: the dropdown's aria-controls points at an empty popup; the
+        // options render in an overlay at the end of the body.
+        return this.shell(null, `<div role="heading" aria-level="1">Create app</div>
+          <div role="heading" aria-level="2">App details</div>
+          <div><label>App name</label><input type="text" aria-label="App name" maxlength="30"><span>0 / 30</span></div>
+          <div><label>Package name</label><input type="text" aria-label="App package name" maxlength="150"><span>0 / 150</span>
+            <button type="button" id="check-pkg">Check availability</button><div aria-live="polite" id="pkg-status"></div></div>
+          <div><span>Default language</span>
+            <div role="button" tabindex="0" aria-haspopup="listbox" aria-expanded="false" aria-controls="lang-popup" aria-label="Default language: English (United States) – en-US" id="lang"><span>English (United States) – en-US</span> <i role="img" aria-hidden="true">arrow_drop_down</i></div>
+            <div role="none" id="lang-popup"></div></div>
+          <div role="radiogroup" aria-label="Choose the category of your application"><input type="radio" role="radio" id="k1" name="kind"><label for="k1">App</label><input type="radio" role="radio" id="k2" name="kind"><label for="k2">Game</label></div>
+          <div role="radiogroup" aria-label="Choose if your application is free or paid"><input type="radio" role="radio" id="p1" name="price"><label for="p1">Free</label><input type="radio" role="radio" id="p2" name="price"><label for="p2">Paid</label></div>
+          <div role="heading" aria-level="2">Declarations</div>
+          <div><input type="checkbox" role="checkbox" aria-labelledby="d1l"><div id="d1l"><b>Confirm app meets the Developer Program Policies</b>The application meets Developer Program Policies.</div></div>
+          <div><input type="checkbox" role="checkbox" aria-labelledby="d2l"><div id="d2l"><b>Accept US export laws</b>I acknowledge that my software application may be subject to United States export laws.</div></div>
+          ${extra}
+          <div id="create-errors"></div>
+          <button type="button">Create app</button><button type="button">Cancel</button>
+          <div class="overlay"><div role="listbox" id="lang-list" hidden>${opts}</div></div>`);
       }
       case 'dashboard': {
         const tasks = this.dashboardTasks(app).map(([name, done]) => `<li aria-label="${done ? 'Completed' : 'Not completed'}: ${esc(name)}"><a href="#">${esc(name)}</a></li>`).join('');
@@ -208,18 +213,18 @@ export class FakeConsole {
       case 'listing': {
         const sections = GRAPHIC_SECTIONS.map(([key, title, multi]) => {
           const imgs = app.graphics[key].map((n) => `<img src="data:," alt="${esc(n)}">`).join('');
-          return `<section aria-label="${title}"><h3>${title}</h3><div>${imgs}</div><input type="file" accept="image/png,image/jpeg" ${multi ? 'multiple' : ''} aria-hidden="true"><button type="button">Upload</button></section>`;
+          // NOTE: live, graphics are added through an "Add assets" dialog and
+          // no file input is present; this file input is a simulator stand-in.
+          return `<div role="group" data-title="${title}"><label><div>${title}</div> <span aria-label="Required field">*</span></label><div>${imgs}</div><input type="file" accept="image/png,image/jpeg" ${multi ? 'multiple' : ''} aria-hidden="true"><button type="button">Upload</button></div>`;
         }).join('');
-        return this.shell(r.appId, `<h1>Main store listing</h1>
-          <section aria-labelledby="det"><h2 id="det">App details</h2>
-            <label for="t">App name</label><input id="t" value="${esc(app.listing.title)}"><span>${[...app.listing.title].length}/30</span>
-            <label for="sd">Short description</label><textarea id="sd">${esc(app.listing.shortDescription)}</textarea>
-            <label for="fd">Full description</label><textarea id="fd">${esc(app.listing.fullDescription)}</textarea>
-          </section>
-          <section aria-labelledby="gr"><h2 id="gr">Graphics</h2>${sections}
-            <label for="v">Video</label><input id="v" type="url" value="${esc(app.listing.video)}">
-          </section>
-          <button type="button">Save</button>`);
+        return this.shell(r.appId, `<div role="heading" aria-level="1">Default store listing</div>
+          <div role="heading" aria-level="2">Common text assets</div>
+            <div role="group"><label><span id="tl">App name</span> <span aria-label="Required field">*</span></label><input id="t" aria-labelledby="tl" value="${esc(app.listing.title)}"><span>${[...app.listing.title].length} / 30</span></div>
+            <div role="group"><label><span id="sdl">Short description</span> *</label><input id="sd" aria-labelledby="sdl" value="${esc(app.listing.shortDescription)}"></div>
+            <div role="group"><label><span id="fdl">Full description</span> *</label><textarea id="fd" aria-labelledby="fdl">${esc(app.listing.fullDescription)}</textarea></div>
+          <div role="heading" aria-level="2">Common visual assets</div>${sections}
+            <div role="group"><label><span id="vl">Video</span></label><input id="v" type="text" aria-labelledby="vl" value="${esc(app.listing.video)}"></div>
+          <button type="button" disabled>Discard</button><button type="button">Save as draft</button><button type="button">Next</button>`);
       }
       case 'settings': {
         const opts = ['', ...CATEGORIES].map((c) => `<option value="${esc(c)}" ${app.settings.category === c ? 'selected' : ''}>${c || 'Select a category'}</option>`).join('');
@@ -300,41 +305,49 @@ export class FakeConsole {
 
     doc.addEventListener('click', (ev) => {
       const t = ev.target;
-      const combo = t.closest('[role=combobox]');
+      const combo = t.closest('[aria-haspopup=listbox]');
+      const langList = doc.getElementById('lang-list');
       if (combo) {
-        const list = doc.getElementById(combo.getAttribute('aria-controls'));
-        list.hidden = !list.hidden;
-        combo.setAttribute('aria-expanded', String(!list.hidden));
+        langList.hidden = !langList.hidden;
+        combo.setAttribute('aria-expanded', String(!langList.hidden));
         return;
       }
       const opt = t.closest('[role=option]');
       if (opt) {
-        const list = opt.closest('[role=listbox]');
-        const c = doc.querySelector(`[aria-controls="${list.id}"]`);
-        list.querySelectorAll('[role=option]').forEach((o) => o.setAttribute('aria-selected', String(o === opt)));
-        c.textContent = text(opt);
-        list.hidden = true;
+        const c = doc.getElementById('lang');
+        langList.querySelectorAll('[role=option]').forEach((o) => o.setAttribute('aria-selected', String(o === opt)));
+        c.querySelector('span').textContent = text(opt);
+        c.setAttribute('aria-label', `Default language: ${text(opt)}`);
+        langList.hidden = true;
         c.setAttribute('aria-expanded', 'false');
         return;
       }
-      const btn = t.closest('button');
+      const btn = t.closest('button,a[role=link]');
       if (!btn) return;
+      if (btn.matches('a')) ev.preventDefault();
       const label = text(btn);
       if (r.page === 'list' && label === 'Create app') {
         this.clicks.push('open-create');
         later(() => this.load(tabId, this.url('create-new-app')));
+      } else if (r.page === 'create' && label === 'Check availability') {
+        this.clicks.push('check-package');
+        const pkg = doc.querySelector('input[aria-label="App package name"]').value;
+        const taken = [...this.apps.values()].some((a) => a.packageName === pkg) || pkg === this.faults.packageTaken;
+        btn.disabled = true;
+        later(() => { doc.getElementById('pkg-status').innerHTML = taken ? '<i aria-hidden="true">error</i> This package name is already in use' : '<i aria-hidden="true">check_circle</i> Package name available'; });
       } else if (r.page === 'create' && label === 'Create app') {
         this.clicks.push('create-app');
-        const name = doc.getElementById('f-name').value;
+        const name = doc.querySelector('input[aria-label="App name"]').value;
+        const pkg = doc.querySelector('input[aria-label="App package name"]').value;
         const boxes = [...doc.querySelectorAll('input[type=checkbox]')];
-        if (!name || boxes.some((b) => !b.checked)) {
+        if (!name || !pkg || !/available$/.test(text(doc.getElementById('pkg-status'))) || boxes.some((b) => !b.checked)) {
           doc.getElementById('create-errors').innerHTML = '<div role="alert">Complete all required fields.</div>';
           return;
         }
         const id = String(this.nextAppId++);
-        this.apps.set(id, newApp(name));
+        this.apps.set(id, newApp(name, { packageName: pkg }));
         if (!this.faults.createWithoutNavigation) later(() => this.load(tabId, `${this.appBase(id)}/app-dashboard`));
-      } else if (label === 'Save') {
+      } else if (/^Save( as draft)?$/.test(label)) {
         this.save(r, app, doc);
         if (!this.faults.saveError) {
           btn.disabled = true;
@@ -362,7 +375,7 @@ export class FakeConsole {
     doc.addEventListener('change', (ev) => {
       const input = ev.target;
       if (input.type !== 'file') return;
-      const section = input.closest('section');
+      const section = input.closest('[role=group],section');
       const files = [...input.files];
       if (r.page === 'listing') {
         later(() => {
@@ -396,7 +409,7 @@ export class FakeConsole {
     if (r.page === 'listing') {
       app.listing = { title: v('t'), shortDescription: v('sd'), fullDescription: v('fd'), video: v('v') };
       for (const [key, title] of GRAPHIC_SECTIONS) {
-        const sec = doc.querySelector(`section[aria-label="${title}"]`);
+        const sec = doc.querySelector(`[role=group][data-title="${title}"]`);
         app.graphics[key] = [...sec.querySelectorAll('img')].map((i) => i.getAttribute('alt'));
       }
     } else if (r.page === 'settings') {

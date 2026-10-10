@@ -28,16 +28,16 @@ function page(url, body) {
 }
 
 test('page detection needs both URL and heading', () => {
-  const ok = page(`${BASE}/app/1/main-store-listing`, FIXTURES.storeListing());
-  assert.equal(detectPage(ok.doc, `${BASE}/app/1/main-store-listing`).ready, true);
-  const loading = page(`${BASE}/app/1/main-store-listing`, '<div role="progressbar"></div>');
-  const d = detectPage(loading.doc, `${BASE}/app/1/main-store-listing`);
+  const ok = page(`${BASE}/app/1/store-listings/default/edit`, FIXTURES.storeListing());
+  assert.equal(detectPage(ok.doc, `${BASE}/app/1/store-listings/default/edit`).ready, true);
+  const loading = page(`${BASE}/app/1/store-listings/default/edit`, '<div role="progressbar"></div>');
+  const d = detectPage(loading.doc, `${BASE}/app/1/store-listings/default/edit`);
   assert.equal(d.pageType, 'STORE_LISTING');
   assert.equal(d.ready, false);
 });
 
 test('content handler rejects unknown request types and wrong pages', async () => {
-  const p = page(`${BASE}/app/1/main-store-listing`, FIXTURES.storeListing());
+  const p = page(`${BASE}/app/1/store-listings/default/edit`, FIXTURES.storeListing());
   assert.equal((await p.handler({ type: 'EVAL', code: 'x' })).error.code, 'MESSAGE_REJECTED');
   const r = await p.handler({ type: 'PCA_APPLY', stage: 'STORE_SETTINGS', step: 'x' });
   assert.equal(r.ok, false);
@@ -53,12 +53,34 @@ test('create app: language option matching and app list parsing', () => {
   assert.ok(!m.test('English (United Kingdom) – en-GB'));
   assert.ok(languageOptionMatcher('id').test('Indonesian – id'));
   assert.ok(!languageOptionMatcher('id').test('Yiddish – yi'));
+  // Live: names sit above the package name in a role=grid; nav list items are ignored.
   const p = page(`${BASE}/app-list`, FIXTURES.appList(['Acme Notes', 'Beta']));
-  assert.deepEqual(listedAppNames(p.doc.body).filter((n) => n !== 'App'), ['Acme Notes', 'Beta']);
+  assert.deepEqual(listedAppNames(p.doc.body), ['Acme Notes', 'Beta']);
+  assert.equal(detectPage(p.doc, `${BASE}/app-list`).ready, true, 'level-2 "N apps" heading identifies the app list');
+});
+
+test('create app: precheck finds the "Create app" link on the app list', async () => {
+  const p = page(`${BASE}/app-list`, FIXTURES.appList(['Beta']));
+  const r = await p.handler({ type: 'PCA_INSPECT', stage: 'CREATE_APP', step: 'precheck', payload: { appName: 'Acme', allowDuplicateName: false } });
+  assert.deepEqual(r.report.blocking, []);
+  const dup = await p.handler({ type: 'PCA_INSPECT', stage: 'CREATE_APP', step: 'precheck', payload: { appName: 'beta', allowDuplicateName: false } });
+  assert.equal(dup.report.blocking[0].code, 'POSSIBLE_DUPLICATE_APP');
+});
+
+test('create app form: package name is required and must be confirmed available', async () => {
+  const payload = { appName: 'Acme', packageName: 'com.acme.notes', defaultLanguage: 'en-US', appOrGame: 'app', pricing: 'free', policiesAccepted: true, exportLawsAccepted: true };
+  const none = page(`${BASE}/create-new-app`, FIXTURES.createApp());
+  const r = await none.handler({ type: 'PCA_INSPECT', stage: 'CREATE_APP', step: 'fill-form', payload: { ...payload, packageName: '' } });
+  assert.ok(r.report.blocking.some((b) => b.field === 'packageName'));
+  const v = await none.handler({ type: 'PCA_VERIFY', stage: 'CREATE_APP', step: 'fill-form', payload });
+  assert.ok(v.verify.mismatches.some((m) => m.field === 'packageName'));
+  const ok = page(`${BASE}/create-new-app`, FIXTURES.createApp({ packageStatus: 'Package name available' }));
+  const r2 = await ok.handler({ type: 'PCA_INSPECT', stage: 'CREATE_APP', step: 'fill-form', payload });
+  assert.match(r2.report.notes.join(' '), /Package name available/);
 });
 
 test('create app form: inspect reports fields; ambiguous field blocks', async () => {
-  const payload = { appName: 'Acme', defaultLanguage: 'en-US', appOrGame: 'app', pricing: 'free', policiesAccepted: true, exportLawsAccepted: true };
+  const payload = { appName: 'Acme', packageName: 'com.acme.notes', defaultLanguage: 'en-US', appOrGame: 'app', pricing: 'free', policiesAccepted: true, exportLawsAccepted: true };
   const p = page(`${BASE}/create-new-app`, FIXTURES.createApp());
   const r = await p.handler({ type: 'PCA_INSPECT', stage: 'CREATE_APP', step: 'fill-form', payload });
   assert.equal(r.ok, true);
@@ -73,17 +95,17 @@ test('create app form: inspect reports fields; ambiguous field blocks', async ()
 
 test('create app form: unanswered declarations are never ticked', async () => {
   const p = page(`${BASE}/create-new-app`, FIXTURES.createApp());
-  const r = await p.handler({ type: 'PCA_INSPECT', stage: 'CREATE_APP', step: 'fill-form', payload: { appName: 'A', defaultLanguage: 'en-US', appOrGame: 'app', pricing: 'free', policiesAccepted: null, exportLawsAccepted: true } });
+  const r = await p.handler({ type: 'PCA_INSPECT', stage: 'CREATE_APP', step: 'fill-form', payload: { appName: 'A', packageName: 'com.a', defaultLanguage: 'en-US', appOrGame: 'app', pricing: 'free', policiesAccepted: null, exportLawsAccepted: true } });
   assert.ok(r.report.blocking.some((b) => b.code === 'DECLARATION_UNANSWERED'));
-  const box = p.doc.getElementById('d1');
+  const box = p.doc.querySelector('input[aria-labelledby=d1]');
   assert.equal(box.checked, false);
 });
 
 test('store listing text: apply then verify; existing graphics block uploads', async () => {
-  const p = page(`${BASE}/app/1/main-store-listing`, FIXTURES.storeListing({ iconCount: 1 }));
+  const p = page(`${BASE}/app/1/store-listings/default/edit`, FIXTURES.storeListing({ iconCount: 1 }));
   const payload = { title: 'Acme', shortDescription: 'Short', fullDescription: 'Full\ntext', promoVideoUrl: '' };
   // Simulate the page acknowledging the save.
-  p.doc.querySelector('main > button').addEventListener('click', () => { p.doc.querySelector('[role=status]').textContent = 'Changes saved'; });
+  [...p.doc.querySelectorAll('main > button')].find((b) => b.textContent === 'Save as draft').addEventListener('click', () => { p.doc.querySelector('[role=status]').textContent = 'Changes saved'; });
   const a = await p.handler({ type: 'PCA_APPLY', stage: 'STORE_LISTING', step: 'listing-text', payload });
   assert.equal(a.ok, true, JSON.stringify(a.error));
   const v = await p.handler({ type: 'PCA_VERIFY', stage: 'STORE_LISTING', step: 'listing-text', payload });
@@ -92,15 +114,21 @@ test('store listing text: apply then verify; existing graphics block uploads', a
   assert.equal(g.report.blocking[0].code, 'EXISTING_CONTENT');
 });
 
+test('store listing graphics: the live "Add assets" dialog stops as a manual step', async () => {
+  const p = page(`${BASE}/app/1/store-listings/default/edit`, FIXTURES.storeListing({ addAssets: true }));
+  const g = await p.handler({ type: 'PCA_INSPECT', stage: 'STORE_LISTING', step: 'listing-graphics', payload: { graphics: { appIcon: [{ assetId: 'i', fileName: 'icon.png' }], featureGraphic: [], phoneScreenshots: [], tablet7Screenshots: [], tablet10Screenshots: [] }, alreadyUploaded: [] } });
+  assert.equal(g.report.blocking[0].code, 'MANUAL_SECTION_INCOMPLETE');
+});
+
 test('store listing: a save the page never acknowledges is not treated as success', async () => {
-  const p = page(`${BASE}/app/1/main-store-listing`, FIXTURES.storeListing());
+  const p = page(`${BASE}/app/1/store-listings/default/edit`, FIXTURES.storeListing());
   const r = await p.handler({ type: 'PCA_APPLY', stage: 'STORE_LISTING', step: 'listing-text', stepTimeoutMs: 100, payload: { title: 'A', shortDescription: 'B', fullDescription: 'C', promoVideoUrl: '' } });
   assert.equal(r.ok, false);
   assert.equal(r.error.code, 'WAIT_TIMEOUT');
 });
 
 test('store listing: video field left untouched when no URL is provided', async () => {
-  const p = page(`${BASE}/app/1/main-store-listing`, FIXTURES.storeListing({ video: 'https://youtu.be/old' }));
+  const p = page(`${BASE}/app/1/store-listings/default/edit`, FIXTURES.storeListing({ video: 'https://youtu.be/old' }));
   const r = await p.handler({ type: 'PCA_INSPECT', stage: 'STORE_LISTING', step: 'listing-text', payload: { title: 'A', shortDescription: 'B', fullDescription: 'C', promoVideoUrl: '' } });
   assert.equal(r.report.fields.find((f) => f.key === 'promoVideoUrl').status, 'skipped');
 });

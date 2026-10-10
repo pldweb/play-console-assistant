@@ -46,6 +46,7 @@ export const USER_ACTION_HINTS = Object.freeze({
   PROCESSING_TIMEOUT: 'The bundle is still processing or failed. Check the release page, then resume.',
   VERSION_CODE_CONFLICT: 'This version code was already used. Build a bundle with a higher version code.',
   PACKAGE_MISMATCH: 'The bundle belongs to a different package. Select the correct .aab for this app.',
+  PACKAGE_UNAVAILABLE: 'Play Console says this package name cannot be used. Change the package name in the app form, then resume.',
   VERIFY_FAILED: 'The result could not be verified. Check the page and the details, then resume.',
   DECLARATION_UNANSWERED: 'Answer the declaration in this app\'s form first.',
   MANUAL_SECTION_INCOMPLETE: 'Complete the listed sections yourself in Play Console, then resume.',

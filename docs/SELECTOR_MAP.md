@@ -10,7 +10,8 @@ There is no fallback guessing. Zero matches gives `ELEMENT_NOT_FOUND`, and more 
 
 **Test status legend**
 - **Mock:** covered by jsdom tests against the synthetic simulator or fixtures (`tests/helpers/fake-console.js`, `tests/fixtures/pages.js`).
-- **Live:** checked on the real Play Console. **No entry is live-verified yet.**
+- **Live ✔ (read):** labels/structure read on the real Play Console on 2026-10-10 (All apps, Create app, Default store listing). Not yet exercised by a full extension run.
+- **Live ✖:** not checked on the real Play Console yet.
 
 To update an entry after a live check:
 1. Run automation with approval on.
@@ -19,7 +20,20 @@ To update an entry after a live check:
 
 ## Page detection
 
-`src/content/page-detector.js`: the URL path and the main `h1` must both match. See [PLATFORM_AUDIT.md](PLATFORM_AUDIT.md#page-types-the-extension-expects-all-unverified). Verification: `detectPage().ready`. Test status: Mock ✔ · Live ✖.
+`src/content/page-detector.js`: the URL path and a heading (`h1`/`h2` or `role=heading` level 1–2) must both match. See [PLATFORM_AUDIT.md](PLATFORM_AUDIT.md#page-types-the-extension-expects-all-unverified). Verification: `detectPage().ready`.
+
+Live findings (2026-10-10):
+
+| Page | Path after `/developers/{dev}/` | Heading used |
+|---|---|---|
+| APP_LIST | `app-list` | level-2 `N apps` (the level-1 heading is the developer account name) |
+| CREATE_APP | `create-new-app` | `Create app` |
+| APP_DASHBOARD | `app/{app}/app-dashboard` | `Dashboard` |
+| STORE_LISTING | `app/{app}/store-listings/default/edit` (`main-store-listing` redirects to the app list) | `Default store listing` |
+| Store listings overview | `app/{app}/store-listings` — a new app shows a **Create default store listing** button here | not a page type yet |
+| TRACK (closed) | `app/{app}/closed-testing` (no `tracks/` prefix); the others are `tracks/{internal-testing,open-testing,production}` | UNVERIFIED |
+
+Headings are `<simple-html role="heading" aria-level="N">` elements, not `h1`. `/console/u/0/developers` (no ID) is a developer-account chooser.
 
 App identity:
 - The Play Console app ID comes from the URL `/app/{appId}/`.
@@ -29,31 +43,33 @@ App identity:
 
 | Purpose | Locator | Kind | Verification | Status |
 |---|---|---|---|---|
-| Open the form (app list) | button `/^Create app$/i` | button | navigates to CREATE_APP page | Mock ✔ · Live ✖ |
-| Existing apps (duplicate check) | `[role=row]`, `tr`, `[role=listitem]` → first `rowheader`/`th`/`cell`/`td` text | read | exact / prefix name match | Mock ✔ · Live ✖ |
-| App name | label `App name` | text | value read back | Mock ✔ · Live ✖ |
-| Default language | label `Default language` | native select or ARIA combobox; option text ending in `– {code}` (`languageOptionMatcher`) | selected text matches | Mock ✔ · Live ✖ |
-| App or game | radio `App` / `Game` | radio | `checked` | Mock ✔ · Live ✖ |
-| Free or paid | radio `Free` / `Paid` | radio | `checked` | Mock ✔ · Live ✖ |
-| Policies declaration | checkbox name matching `/Developer Program Policies/i` | checkbox | `checked`; ticked only if the record says `true` | Mock ✔ · Live ✖ |
-| Export laws declaration | checkbox matching `/US export laws/i` | checkbox | as above | Mock ✔ · Live ✖ |
+| Open the form (app list) | **link** `a[role=link]` `/^Create app$/i` (`getButton(…, { links: true })`) | link | navigates to CREATE_APP page | Mock ✔ · Live ✔ (read) |
+| Existing apps (duplicate check) | `[role=grid] [role=row]` (header rows skipped) → first `gridcell` → first visible leaf text (the name; the package name is the next leaf) | read | exact / prefix name match | Mock ✔ · Live ✔ (read) |
+| App name | `aria-label="App name"` | text | value read back | Mock ✔ · Live ✔ (read) |
+| Package name | `aria-label="App package name"` (visible label "Package name", max 150) | text | value read back | Mock ✔ · Live ✔ (native setter accepted) |
+| Package availability | button `/^Check availability$/i` → `aria-live=polite` region text `Package name available` (any other text → `PACKAGE_UNAVAILABLE`) | button + read | status text | Mock ✔ · Live ✔ (available case only) |
+| Default language | `div[role=button][aria-haspopup=listbox]`, accessible name `Default language: <value>` → label `/^Default language(:\|$)/i`; options are `[role=option]` (`material-select-dropdown-item`) in an overlay listbox, **not** inside the `aria-controls` popup; option text `Indonesian – id` (`languageOptionMatcher`) | dropdown | shown text without the `arrow_drop_down` icon | Mock ✔ · Live ✔ (read; selection not yet run) |
+| App or game | radio `App` / `Game` (`label for`), group `aria-label="Choose the category of your application"` | radio | `checked` | Mock ✔ · Live ✔ (read) |
+| Free or paid | radio `Free` / `Paid`, group `aria-label="Choose if your application is free or paid"` | radio | `checked` | Mock ✔ · Live ✔ (read) |
+| Policies declaration | checkbox, `aria-labelledby` text starting "Confirm app meets the Developer Program Policies" → `/Developer Program Policies/i` | checkbox | `checked`; ticked only if the record says `true` | Mock ✔ · Live ✔ (read) |
+| Export laws declaration | checkbox, `aria-labelledby` text starting "Accept US export laws" → `/US export laws/i` | checkbox | as above | Mock ✔ · Live ✔ (read) |
 | Unknown questions | any other checkbox or radio group on the page | — | stops with `UNKNOWN_QUESTION` | Mock ✔ |
-| Submit | button `/^Create app$/i` | button | engine waits for APP_DASHBOARD with the new app ID and the exact app name | Mock ✔ · Live ✖ |
+| Submit | button `/^Create app$/i` (disabled until the form is complete; a **Cancel** button sits next to it) | button | engine waits for APP_DASHBOARD with the new app ID and the exact app name | Mock ✔ · Live ✖ |
 
 ## Store listing — `store-listing-adapter.js`
 
 | Purpose | Locator | Kind | Verification | Status |
 |---|---|---|---|---|
-| App name | label `App name` | text | read back after reload | Mock ✔ · Live ✖ |
-| Short description | label `Short description` | text/textarea | read back after reload | Mock ✔ · Live ✖ |
-| Full description | label `Full description` | textarea | read back after reload | Mock ✔ · Live ✖ |
-| Video | label `/^Video( URL)?$/i`; untouched when empty | text | read back | Mock ✔ · Live ✖ |
-| Graphics sections | section `App icon`, `Feature graphic`, `Phone screenshots`, `7-inch tablet screenshots`, `10-inch tablet screenshots` | section | — | Mock ✔ · Live ✖ |
-| Upload control | exactly one enabled `input[type=file]` in the section | file | preview count +1 per file; `role=alert` in the section → `UPLOAD_FAILED` | Mock ✔ · Live ✖ (upload mechanism UNVERIFIED) |
+| App name | `aria-labelledby` → `App name` (`input`, max 30) | text | read back after reload | Mock ✔ · Live ✔ (read) |
+| Short description | `aria-labelledby` → `Short description` (`input`, max 80) | text | read back after reload | Mock ✔ · Live ✔ (read) |
+| Full description | `aria-labelledby` → `Full description` (`textarea`, max 4000) | textarea | read back after reload | Mock ✔ · Live ✔ (read) |
+| Video | `aria-labelledby` → `Video`; untouched when empty | text | read back | Mock ✔ · Live ✔ (read) |
+| Graphics sections | `[role=group]` (`vertical-form-field`) whose own `<label>` reads `App icon *`, `Feature graphic *`, `Phone screenshots *`; tablet sections sit under the collapsed **Tablet assets** heading | section | — | Mock ✔ · Live ✔ (App icon, Feature graphic, Phone screenshots read) |
+| Upload control | Live: **no `input[type=file]`**; each section has an **Add assets** button that opens an asset dialog → step stops with `MANUAL_SECTION_INCOMPLETE`. The simulator still uses a file input. | file | preview count +1 per file; `role=alert` in the section → `UPLOAD_FAILED` | Mock ✔ · Live: not automated |
 | Existing images | `img`, `[role=img]` in the section | read | any existing image → `EXISTING_CONTENT` | Mock ✔ |
 | Category | label `Category` | select | selected text | Mock ✔ · Live ✖ |
 | Email / Phone / Website | labels `Email address`, `Phone number`, `Website` | text | read back after reload | Mock ✔ · Live ✖ |
-| Save | button `/^Save( changes\| as draft)?$/i` | button | new `role=alert` → `PAGE_VALIDATION_ERROR`; success = button disabled or removed, or a status region contains "saved" | Mock ✔ · Live ✖ |
+| Save | button `/^Save( changes\| as draft)?$/i` — live: **Save as draft** (next to Discard and **Next**) | button | new `role=alert` → `PAGE_VALIDATION_ERROR`; success = button disabled or removed, or a status region contains "saved" | Mock ✔ · Live ✖ |
 
 ## App content — `app-content-adapter.js`
 

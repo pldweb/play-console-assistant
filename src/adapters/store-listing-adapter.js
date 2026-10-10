@@ -10,11 +10,15 @@
  *  3. store-settings   (STORE_SETTINGS) category and contact details; Save.
  *
  * Text steps are verified after a page reload so that only saved values
- * count. All labels are UNVERIFIED (docs/SELECTOR_MAP.md).
+ * count. The listing text labels were checked on the live console
+ * (2026-10-10). Live, graphics are added through an "Add assets" dialog with
+ * no file input; that mechanism is not automated, so a section that only
+ * offers "Add assets" stops with MANUAL_SECTION_INCOMPLETE.
+ * Store settings labels are UNVERIFIED (docs/SELECTOR_MAP.md).
  */
 import { defineStage, inspectFields, applyFields, verifyFields, saveChanges, blocking, assertNoBlocking } from './base-adapter.js';
 import { PAGE_TYPES } from '../content/page-detector.js';
-import { getSection, isVisible, setFileInput, waitFor, collectValidationErrors } from '../content/dom-utils.js';
+import { getSection, isVisible, setFileInput, waitFor, collectValidationErrors, queryButtons } from '../content/dom-utils.js';
 import { PCAError, ERROR_CODES, toPCAError } from '../services/errors.js';
 
 export const LISTING_TEXT_FIELDS = [
@@ -46,6 +50,9 @@ function previewCount(section) {
 
 function uploadInput(section) {
   const inputs = [...section.querySelectorAll('input[type=file]')].filter((i) => !i.disabled);
+  if (inputs.length === 0 && queryButtons(section, /^Add assets$/i).length) {
+    throw new PCAError(ERROR_CODES.MANUAL_SECTION_INCOMPLETE, 'Play Console adds graphics through its "Add assets" dialog, which the extension does not automate yet. Add them yourself, then resume.');
+  }
   if (inputs.length === 0) throw new PCAError(ERROR_CODES.ELEMENT_NOT_FOUND, 'No upload control found in this section.');
   if (inputs.length > 1) throw new PCAError(ERROR_CODES.AMBIGUOUS_ELEMENT, 'More than one upload control in this section.');
   return inputs[0];

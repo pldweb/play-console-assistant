@@ -42,10 +42,12 @@ test('base64 chunking round-trips binary data', () => {
 test('parseConsoleUrl extracts identity and page type', () => {
   const base = 'https://play.google.com/console/u/1/developers/555/app/4970/';
   assert.deepEqual(
-    (({ pageType, userIndex, developerId, appId }) => ({ pageType, userIndex, developerId, appId }))(parseConsoleUrl(`${base}main-store-listing`)),
+    (({ pageType, userIndex, developerId, appId }) => ({ pageType, userIndex, developerId, appId }))(parseConsoleUrl(`${base}store-listings/default/edit`)),
     { pageType: 'STORE_LISTING', userIndex: 1, developerId: '555', appId: '4970' },
   );
   assert.equal(parseConsoleUrl(`${base}tracks/internal-testing`).track, 'internal');
+  assert.equal(parseConsoleUrl(`${base}closed-testing`).track, 'closed');
+  assert.equal(parseConsoleUrl(`${base}main-store-listing`).pageType, 'UNKNOWN', 'old guess redirects to the app list live');
   assert.equal(parseConsoleUrl(`${base}tracks/internal-testing/releases/3/prepare`).pageType, 'RELEASE_EDIT');
   assert.equal(parseConsoleUrl(`${base}app-content/overview`).pageType, 'APP_CONTENT_OVERVIEW');
   assert.equal(parseConsoleUrl(`${base}something-new`).pageType, 'UNKNOWN');
@@ -62,4 +64,6 @@ test('buildConsoleUrl refuses to build app pages without an app id', () => {
   assert.equal(buildConsoleUrl(PAGE_TYPES.APP_LIST, { developerId: '1', userIndex: 2 }), 'https://play.google.com/console/u/2/developers/1/app-list');
   const u = buildConsoleUrl(PAGE_TYPES.TRACK, { developerId: '1', appId: '2', track: 'internal' });
   assert.equal(parseConsoleUrl(u).pageType, 'TRACK');
+  assert.match(buildConsoleUrl(PAGE_TYPES.TRACK, { developerId: '1', appId: '2', track: 'closed' }), /\/app\/2\/closed-testing$/);
+  assert.match(buildConsoleUrl(PAGE_TYPES.STORE_LISTING, { developerId: '1', appId: '2' }), /\/app\/2\/store-listings\/default\/edit$/);
 });

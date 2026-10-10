@@ -33,18 +33,20 @@ Audit date: 2026-10-10.
 
 | Page type | URL path after `/console/u/{n}/developers/{devId}/` | Expected main heading |
 |---|---|---|
-| APP_LIST | `app-list` | `All apps` or `Home` |
-| CREATE_APP | `create-new-app` | `Create app` |
-| APP_DASHBOARD | `app/{appId}/app-dashboard` | `Dashboard` |
-| STORE_LISTING | `app/{appId}/main-store-listing` | `Main store listing` |
+| APP_LIST | `app-list` ✔ live | `N apps` (level 2) ✔ live; level 1 is the developer name |
+| CREATE_APP | `create-new-app` ✔ live | `Create app` ✔ live |
+| APP_DASHBOARD | `app/{appId}/app-dashboard` ✔ live | `Dashboard` ✔ live |
+| STORE_LISTING | `app/{appId}/store-listings/default/edit` ✔ live | `Default store listing` ✔ live |
 | STORE_SETTINGS | `app/{appId}/store-settings` | `Store settings` |
 | APP_CONTENT_OVERVIEW | `app/{appId}/app-content(/overview)` | `App content` |
 | APP_CONTENT_PRIVACY_POLICY | `app/{appId}/app-content/privacy-policy` | `Privacy policy` |
 | APP_CONTENT_ADS | `app/{appId}/app-content/ads-declaration` | `Ads` |
 | APP_CONTENT_APP_ACCESS | `app/{appId}/app-content/testing-credentials` | `App access` |
-| TRACK | `app/{appId}/tracks/internal-testing` (also `closed-testing`, `open-testing`, `production`) | `Internal testing` etc. |
+| TRACK | `app/{appId}/tracks/internal-testing` (also `tracks/open-testing`, `tracks/production`; closed testing is `app/{appId}/closed-testing`) — paths seen live as nav links | `Internal testing` etc. |
 | RELEASE_EDIT | `app/{appId}/tracks/{track}/releases/{id}/(prepare\|create\|edit)` | `Create/Edit … release` |
 | PUBLISHING_OVERVIEW | `app/{appId}/publishing` | `Publishing overview` |
+
+✔ live = checked on the real console on 2026-10-10; everything else is still unverified.
 
 A page counts as recognised only when both the URL type and the heading match. Anything else is `UNKNOWN`, and automation stops (`UNKNOWN_PAGE` / `WRONG_PAGE`).
 

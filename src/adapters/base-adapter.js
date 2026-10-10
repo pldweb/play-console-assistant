@@ -167,8 +167,8 @@ export async function saveChanges(root, { button = SAVE_BUTTON, timeout = 15000 
   }, { timeout, description: 'save confirmation', rethrow: true });
 }
 
-export function hasButton(root, text) {
-  return queryButtons(root, text).length > 0;
+export function hasButton(root, text, options) {
+  return queryButtons(root, text, options).length > 0;
 }
 
 export function blocking(code, message, extra = {}) {

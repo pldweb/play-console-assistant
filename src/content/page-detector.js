@@ -2,8 +2,9 @@
  * Play Console page detection.
  *
  * A page is recognised only when BOTH its URL path and its main heading
- * match. URL patterns and headings are UNVERIFIED against the live console
- * (see docs/SELECTOR_MAP.md); anything that does not match is UNKNOWN and
+ * match. APP_LIST, CREATE_APP, APP_DASHBOARD and STORE_LISTING were checked
+ * on the live console (2026-10-10); the rest is UNVERIFIED (see
+ * docs/SELECTOR_MAP.md). Anything that does not match is UNKNOWN and
  * automation stops.
  */
 import { getHeadingTexts, normalize, pageHasText, hasElementWithExactText } from './dom-utils.js';
@@ -29,31 +30,36 @@ const P = PAGE_TYPES;
 
 export const CONSOLE_ORIGIN = 'https://play.google.com';
 
-// Path suffix after /console/u/{n}/developers/{devId}/  (UNVERIFIED)
+// Path suffix after /console/u/{n}/developers/{devId}/  (live-checked)
 const DEV_ROUTES = [
   { re: /^app-list\/?$/, type: P.APP_LIST },
   { re: /^create-new-app\/?$/, type: P.CREATE_APP },
 ];
-// Path suffix after .../app/{appId}/  (UNVERIFIED)
+// Path suffix after .../app/{appId}/  (app-dashboard, store-listings/default/edit,
+// store-settings, app-content/overview, tracks/*, closed-testing and publishing
+// seen live as navigation links; the others are UNVERIFIED)
 const APP_ROUTES = [
   { re: /^app-dashboard\/?$/, type: P.APP_DASHBOARD },
-  { re: /^main-store-listing\/?$/, type: P.STORE_LISTING },
+  { re: /^store-listings\/default\/edit\/?$/, type: P.STORE_LISTING },
   { re: /^store-settings\/?$/, type: P.STORE_SETTINGS },
   { re: /^app-content\/privacy-policy\/?$/, type: P.APP_CONTENT_PRIVACY_POLICY },
   { re: /^app-content\/ads-declaration\/?$/, type: P.APP_CONTENT_ADS },
   { re: /^app-content\/testing-credentials\/?$/, type: P.APP_CONTENT_APP_ACCESS },
   { re: /^app-content(\/overview)?\/?$/, type: P.APP_CONTENT_OVERVIEW },
   { re: /^tracks\/([a-z-]+)\/?$/, type: P.TRACK, track: 1 },
+  { re: /^(closed-testing)\/?$/, type: P.TRACK, track: 1 },
   { re: /^tracks\/([a-z-]+)\/releases\/([^/]+)\/(prepare|create|edit)\/?$/, type: P.RELEASE_EDIT, track: 1 },
   { re: /^publishing\/?$/, type: P.PUBLISHING_OVERVIEW },
 ];
 
-/** Expected main heading per page type (UNVERIFIED). */
+/** Expected main heading per page type (see the file comment for what is live-checked). */
 export const PAGE_HEADINGS = Object.freeze({
-  [P.APP_LIST]: /^(All apps|Home)$/i,
+  // The app list's h1 is the developer account name; the level-2 heading
+  // counts the apps ("2 apps").
+  [P.APP_LIST]: /^(All apps|Home|\d+ apps?)$/i,
   [P.CREATE_APP]: /^Create app$/i,
   [P.APP_DASHBOARD]: /^Dashboard$/i,
-  [P.STORE_LISTING]: /^Main store listing$/i,
+  [P.STORE_LISTING]: /^(Default|Main) store listing$/i,
   [P.STORE_SETTINGS]: /^Store settings$/i,
   [P.APP_CONTENT_OVERVIEW]: /^App content$/i,
   [P.APP_CONTENT_PRIVACY_POLICY]: /^Privacy policy$/i,
@@ -64,26 +70,33 @@ export const PAGE_HEADINGS = Object.freeze({
   [P.PUBLISHING_OVERVIEW]: /^Publishing overview$/i,
 });
 
-/** Internal track id -> URL slug (UNVERIFIED). */
+/** Internal track id -> URL slug. */
 export const TRACK_SLUGS = Object.freeze({
   internal: 'internal-testing',
   closed: 'closed-testing',
   open: 'open-testing',
   production: 'production',
 });
+/** Track page path below .../app/{appId}/ (closed testing has no tracks/ prefix). */
+const TRACK_PATHS = Object.freeze({
+  internal: 'tracks/internal-testing',
+  closed: 'closed-testing',
+  open: 'tracks/open-testing',
+  production: 'tracks/production',
+});
 
-/** URL templates for navigation (UNVERIFIED). */
+/** URL templates for navigation. */
 export const URL_TEMPLATES = Object.freeze({
   [P.APP_LIST]: '/console/u/{u}/developers/{dev}/app-list',
   [P.CREATE_APP]: '/console/u/{u}/developers/{dev}/create-new-app',
   [P.APP_DASHBOARD]: '/console/u/{u}/developers/{dev}/app/{app}/app-dashboard',
-  [P.STORE_LISTING]: '/console/u/{u}/developers/{dev}/app/{app}/main-store-listing',
+  [P.STORE_LISTING]: '/console/u/{u}/developers/{dev}/app/{app}/store-listings/default/edit',
   [P.STORE_SETTINGS]: '/console/u/{u}/developers/{dev}/app/{app}/store-settings',
   [P.APP_CONTENT_OVERVIEW]: '/console/u/{u}/developers/{dev}/app/{app}/app-content/overview',
   [P.APP_CONTENT_PRIVACY_POLICY]: '/console/u/{u}/developers/{dev}/app/{app}/app-content/privacy-policy',
   [P.APP_CONTENT_ADS]: '/console/u/{u}/developers/{dev}/app/{app}/app-content/ads-declaration',
   [P.APP_CONTENT_APP_ACCESS]: '/console/u/{u}/developers/{dev}/app/{app}/app-content/testing-credentials',
-  [P.TRACK]: '/console/u/{u}/developers/{dev}/app/{app}/tracks/{track}',
+  [P.TRACK]: '/console/u/{u}/developers/{dev}/app/{app}/{track}',
   [P.PUBLISHING_OVERVIEW]: '/console/u/{u}/developers/{dev}/app/{app}/publishing',
 });
 
@@ -96,7 +109,7 @@ export function buildConsoleUrl(pageType, { userIndex = 0, developerId, appId, t
     .replace('{u}', String(userIndex))
     .replace('{dev}', encodeURIComponent(developerId || ''))
     .replace('{app}', encodeURIComponent(appId || ''))
-    .replace('{track}', TRACK_SLUGS[track] || 'internal-testing');
+    .replace('{track}', TRACK_PATHS[track] || TRACK_PATHS.internal);
 }
 
 /** Parses a Play Console URL into identity parts and a URL-level page type. */

@@ -90,7 +90,7 @@ test('plan approval gate: nothing is written until the exact plan is approved', 
   assert.equal(p.requiredAction.type, 'APPROVE_PLAN');
   assert.equal(p.requiredAction.step, 'fill-form');
   assert.ok(p.requiredAction.report.fields.some((f) => f.key === 'appName' && f.planned === 'Acme Notes'));
-  assert.equal(h.fake.doc(TAB).getElementById('f-name').value, '', 'no field written before approval');
+  assert.equal(h.fake.doc(TAB).querySelector('input[aria-label="App name"]').value, '', 'no field written before approval');
   await assert.rejects(h.engine.approvePlan(app.id, 'wrong-hash', TAB), (e) => e.code === 'APPROVAL_REQUIRED');
   await h.runUntilHalt(() => h.engine.approvePlan(app.id, p.requiredAction.planHash, TAB));
   p = await h.progress(app.id);
@@ -131,7 +131,7 @@ test('unknown question on the create form stops without filling anything', async
   assert.equal(await h.state(app.id), 'NEEDS_USER_ACTION');
   assert.equal(p.errorCode, 'UNKNOWN_QUESTION');
   assert.match(p.errorMessage, /Play App Signing/);
-  assert.equal(h.fake.doc(TAB).getElementById('f-name').value, '');
+  assert.equal(h.fake.doc(TAB).querySelector('input[aria-label="App name"]').value, '');
 });
 
 test('duplicate app name: stops, then link or explicit allow', async () => {
@@ -265,7 +265,7 @@ test('save rejected by Play Console surfaces the page error', async () => {
   const app = await h.addApp();
   h.fake.openTab(TAB, h.fake.url('app-list'));
   const origLoad = h.fake.load.bind(h.fake);
-  h.fake.load = (tabId, url) => { if (url.endsWith('main-store-listing')) h.fake.faults.saveError = 'Short description is too long'; return origLoad(tabId, url); };
+  h.fake.load = (tabId, url) => { if (url.endsWith('store-listings/default/edit')) h.fake.faults.saveError = 'Short description is too long'; return origLoad(tabId, url); };
   await h.runUntilHalt(() => h.engine.start(app.id, TAB));
   const p = await h.progress(app.id);
   assert.equal(p.errorCode, 'PAGE_VALIDATION_ERROR');
@@ -312,7 +312,7 @@ test('identity: a tab showing a different app is refused', async () => {
   const h = await createHarness({ fake });
   const app = await h.addApp();
   await h.appRepo.update(app.id, (a) => { a.playConsole = { developerId: fake.developerId, appId: '222', linkedAt: 'x' }; return a; });
-  fake.openTab(TAB, `${fake.appBase('111')}/main-store-listing`);
+  fake.openTab(TAB, `${fake.appBase('111')}/store-listings/default/edit`);
   // Navigation goes by template to app 222, so first break navigation to stay on 111.
   fake.gateway = ((orig) => () => ({ ...orig(), navigate: async () => {} }))(fake.gateway.bind(fake));
   const h2 = await createHarness({ fake });
